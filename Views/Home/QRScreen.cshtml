@@ -1,0 +1,99 @@
+@{
+    Layout = null;
+    var employee = ViewBag.Employee as DBPQRPermanent.Models.Employee;
+    string empId = employee?.EmpId ?? "";
+    string empName = employee?.Name ?? "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DBP – QR Code – @empName</title>
+    <link rel="icon" type="image/png" href="/dbp-icon.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 20px 50px; overflow-y: auto; overflow-x: hidden; position: relative; }
+        .bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(155deg, rgba(10,25,70,0.93) 0%, rgba(30,64,175,0.88) 45%, rgba(15,40,100,0.96) 100%), url('/bg.png') center/cover no-repeat; }
+        .wrap { position: relative; z-index: 1; width: 100%; max-width: 400px; text-align: center; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.45); font-size: 13px; text-decoration: none; margin-bottom: 20px; }
+        .back-link:hover { color: rgba(255,255,255,0.75); }
+        .brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 22px; }
+        .brand img { height: 40px; object-fit: contain; }
+        .brand-text { color: #f1f5f9; font-size: 14px; font-weight: 700; }
+        .emp-info { margin-bottom: 20px; }
+        .emp-name { color: #fff; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+        .emp-title { display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); color: #f1f5f9; font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 20px; margin-bottom: 4px; }
+        .emp-id { color: rgba(255,255,255,0.4); font-size: 11px; letter-spacing: 1.5px; }
+        .qr-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); border-radius: 20px; padding: 22px; margin-bottom: 14px; backdrop-filter: blur(8px); }
+        .qr-frame { background: #fff; border-radius: 14px; padding: 14px; display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,0.45); margin-bottom: 14px; }
+        .qr-frame img { display: block; width: 200px; height: 200px; border-radius: 4px; }
+        .qr-label { color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .qr-sub { color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 16px; }
+        .permanent-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(22,163,74,0.15); border: 1px solid rgba(22,163,74,0.3); color: #4ade80; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; margin-bottom: 16px; }
+        .btn-save { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color: #fff; font-size: 15px; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 20px rgba(37,99,235,0.4); transition: transform .12s, box-shadow .12s; }
+        .btn-save:hover { transform: translateY(-2px); }
+        .footer-note { color: rgba(255,255,255,0.2); font-size: 11px; margin-top: 24px; }
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="wrap">
+    <a href="/generate" class="back-link">← Generate Another</a>
+    <div class="brand">
+        <img src="/dbp-logo.png" alt="DBP" />
+        <span class="brand-text">QR Contact Card</span>
+    </div>
+    <div class="emp-info">
+        <p class="emp-name">@empName</p>
+        @if (!string.IsNullOrWhiteSpace(employee?.Title))
+        {
+            <p class="emp-title">@employee.Title</p>
+        }
+        <p class="emp-id">@empId</p>
+    </div>
+    <div class="qr-card">
+        <div class="qr-frame">
+            <img src="/qr-image/@empId" alt="QR Code" id="qrImg" crossorigin="anonymous" />
+        </div>
+        <p class="qr-label"><i class="fa-solid fa-camera" style="margin-right:6px;opacity:.7;"></i>Scan to save contact</p>
+        <p class="qr-sub">Phone will prompt to save @empName's contact info</p>
+        <div><span class="permanent-badge"><i class="fa-solid fa-shield-halved"></i> Permanent QR — Never changes</span></div>
+        <button class="btn-save" id="saveBtn" onclick="saveQR()">
+            <i class="fa-solid fa-download"></i> Save QR Code
+        </button>
+    </div>
+    <p class="footer-note">© @DateTime.Now.Year Development Bank of the Philippines</p>
+</div>
+<script>
+    var empId = '@empId';
+    var empName = '@empName';
+    function saveQR() {
+        var btn = document.getElementById('saveBtn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        btn.disabled = true;
+        fetch('/qr-image/' + empId)
+            .then(function(r) { return r.blob(); })
+            .then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url; a.download = empName.replace(/\s+/g,'-') + '-QR.png';
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(url);
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> QR Saved!';
+                btn.style.background = 'linear-gradient(135deg,#16a34a,#15803d)';
+                setTimeout(function() {
+                    btn.innerHTML = '<i class="fa-solid fa-download"></i> Save QR Code';
+                    btn.style.background = ''; btn.disabled = false;
+                }, 2500);
+            })
+            .catch(function() {
+                window.open('/qr-image/' + empId, '_blank');
+                btn.innerHTML = '<i class="fa-solid fa-download"></i> Save QR Code';
+                btn.disabled = false;
+            });
+    }
+</script>
+</body>
+</html>

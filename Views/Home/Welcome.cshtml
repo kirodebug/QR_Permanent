@@ -1,0 +1,51 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DBP – QR Contact Card</title>
+    <link rel="icon" type="image/png" href="/dbp-icon.png" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px 60px; position: relative; overflow-y: auto; overflow-x: hidden; }
+        .bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(155deg, rgba(10,25,70,0.92) 0%, rgba(30,64,175,0.88) 45%, rgba(15,40,100,0.95) 100%), url('/bg.png') center/cover no-repeat; }
+        .bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(37,99,235,0.25) 0%, transparent 70%); }
+        .content { position: relative; z-index: 1; text-align: center; max-width: 420px; width: 100%; }
+        .logo-wrap { margin-bottom: 28px; }
+        .logo-wrap img { width: 90px; height: 90px; object-fit: contain; filter: drop-shadow(0 6px 20px rgba(0,0,0,0.4)); }
+        .tagline { color: rgba(255,255,255,0.55); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { color: #fff; font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; }
+        h1 span { color: #93c5fd; }
+        .subtitle { color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.6; margin-bottom: 40px; }
+        .rule { width: 48px; height: 3px; background: linear-gradient(90deg,#2563eb,#60a5fa); border-radius: 2px; margin: 0 auto 36px; }
+        .features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; text-align: left; }
+        .feature { display: flex; align-items: flex-start; gap: 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(4px); }
+        .feature-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(37,99,235,0.4); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .feature-text strong { display: block; color: #f1f5f9; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+        .feature-text span { color: rgba(255,255,255,0.5); font-size: 12px; }
+        .cta { display: block; width: 100%; padding: 16px 24px; background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color: #fff; font-size: 16px; font-weight: 800; border: none; border-radius: 14px; text-decoration: none; cursor: pointer; letter-spacing: .5px; box-shadow: 0 8px 24px rgba(37,99,235,0.45); transition: transform .12s, box-shadow .12s; }
+        .cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(37,99,235,0.55); }
+        .footer-note { color: rgba(255,255,255,0.25); font-size: 11px; margin-top: 32px; }
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="content">
+    <div class="logo-wrap"><img src="/dbp-logo.png" alt="DBP" /></div>
+    <p class="tagline">Development Bank of the Philippines</p>
+    <h1>Your <span>QR</span><br />Contact Card</h1>
+    <p class="subtitle">Generate your permanent QR code. Anyone who scans it instantly saves your contact information.</p>
+    <div class="rule"></div>
+    <div class="features">
+        <div class="feature"><div class="feature-icon">🪪</div><div class="feature-text"><strong>Unique to your Employee ID</strong><span>Your QR code is permanent and only yours</span></div></div>
+        <div class="feature"><div class="feature-icon">📲</div><div class="feature-text"><strong>Scan to save contact</strong><span>Phone instantly prompts to save your info</span></div></div>
+        <div class="feature"><div class="feature-icon">🔄</div><div class="feature-text"><strong>Always up to date</strong><span>Contact info reflects live data from the database</span></div></div>
+    </div>
+    <a href="/generate" class="cta">Get My QR Code →</a>
+    <p class="footer-note">© @DateTime.Now.Year Development Bank of the Philippines</p>
+</div>
+</body>
+</html>

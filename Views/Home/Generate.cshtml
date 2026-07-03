@@ -1,0 +1,70 @@
+@{
+    Layout = null;
+    var error = TempData["Error"] as string;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DBP – Enter Employee ID</title>
+    <link rel="icon" type="image/png" href="/dbp-icon.png" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px 60px; position: relative; overflow-y: auto; overflow-x: hidden; }
+        .bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(155deg, rgba(10,25,70,0.92) 0%, rgba(30,64,175,0.88) 45%, rgba(15,40,100,0.95) 100%), url('/bg.png') center/cover no-repeat; }
+        .content { position: relative; z-index: 1; text-align: center; max-width: 420px; width: 100%; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.45); font-size: 13px; text-decoration: none; margin-bottom: 28px; }
+        .back-link:hover { color: rgba(255,255,255,0.75); }
+        .logo-wrap { margin-bottom: 20px; }
+        .logo-wrap img { width: 70px; height: 70px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.4)); }
+        .tagline { color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { color: #fff; font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+        h1 span { color: #93c5fd; }
+        .subtitle { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 32px; }
+        .card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13); border-radius: 20px; padding: 28px 24px; backdrop-filter: blur(8px); margin-bottom: 16px; }
+        .field-label { display: block; color: rgba(255,255,255,0.55); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; text-align: left; }
+        .field-input { width: 100%; padding: 15px 18px; border: 1.5px solid rgba(255,255,255,0.18); border-radius: 12px; background: rgba(255,255,255,0.08); color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 2px; outline: none; text-align: center; transition: border-color .2s; margin-bottom: 8px; }
+        .field-input::placeholder { color: rgba(255,255,255,0.25); letter-spacing: 1px; font-size: 14px; font-weight: 400; }
+        .field-input:focus { border-color: #60a5fa; background: rgba(255,255,255,0.12); }
+        .field-hint { color: rgba(255,255,255,0.35); font-size: 11px; text-align: center; margin-bottom: 20px; }
+        .error-box { background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.35); border-radius: 10px; padding: 11px 14px; color: #fca5a5; font-size: 13px; margin-bottom: 16px; text-align: left; }
+        .btn-generate { width: 100%; padding: 16px; background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color: #fff; font-size: 16px; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 20px rgba(37,99,235,0.4); transition: transform .12s, box-shadow .12s; }
+        .btn-generate:hover { transform: translateY(-2px); }
+        .btn-generate:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .footer-note { color: rgba(255,255,255,0.25); font-size: 11px; margin-top: 24px; }
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="content">
+    <a href="/" class="back-link">← Back</a>
+    <div class="logo-wrap"><img src="/dbp-logo.png" alt="DBP" /></div>
+    <p class="tagline">Development Bank of the Philippines</p>
+    <h1>Enter Your <span>Employee ID</span></h1>
+    <p class="subtitle">We'll generate your permanent QR code linked to your contact information.</p>
+    <div class="card">
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="error-box">⚠️ @error</div>
+        }
+        <form method="post" action="/generate" id="generateForm">
+            @Html.AntiForgeryToken()
+            <label class="field-label" for="empId">Employee ID</label>
+            <input type="text" id="empId" name="empId" class="field-input" placeholder="e.g. 0000001-DBP" autocomplete="off" autofocus spellcheck="false" />
+            <p class="field-hint">Enter your employee number followed by your branch code</p>
+            <button type="submit" class="btn-generate" id="submitBtn">Generate My QR Code →</button>
+        </form>
+    </div>
+    <p class="footer-note">© @DateTime.Now.Year Development Bank of the Philippines</p>
+</div>
+<script>
+    document.getElementById('generateForm').addEventListener('submit', function () {
+        var btn = document.getElementById('submitBtn');
+        document.getElementById('empId').value = document.getElementById('empId').value.trim();
+        btn.textContent = 'Looking up...';
+        btn.disabled = true;
+    });
+</script>
+</body>
+</html>
