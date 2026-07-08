@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace DBPQRPermanent.Controllers
@@ -18,6 +19,15 @@ namespace DBPQRPermanent.Controllers
         {
             _db = db;
             _qrService = qrService;
+        }
+
+        // Generates a cryptographically random token (16 bytes = 32 hex chars)
+        private static string GenerateToken()
+        {
+            var bytes = new byte[16];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(bytes);
+            return Convert.ToHexString(bytes).ToLower();
         }
 
         [HttpGet("/")]
@@ -44,14 +54,18 @@ namespace DBPQRPermanent.Controllers
                 return View("Generate");
             }
 
-            if (!_db.QRCodes.Any(q => q.EmpId == empId))
+            // Check if QR already exists for this employee
+            var existing = _db.QRCodes.FirstOrDefault(q => q.EmpId == empId);
+            if (existing == null)
             {
-                _db.QRCodes.Add(new QRCode
+                // Generate permanent random token — this never changes
+                existing = new QRCode
                 {
                     EmpId = empId,
-                    QRImageUrl = $"/contact/{empId}",
+                    Token = GenerateToken(),
                     GeneratedAt = DateTime.UtcNow
-                });
+                };
+                _db.QRCodes.Add(existing);
                 _db.SaveChanges();
             }
 
@@ -65,16 +79,20 @@ namespace DBPQRPermanent.Controllers
             var employee = _db.Employees.FirstOrDefault(e => e.EmpId == empId);
             if (employee == null) return View("NotFound");
 
-            if (!_db.QRCodes.Any(q => q.EmpId == empId))
+            var qr = _db.QRCodes.FirstOrDefault(q => q.EmpId == empId);
+            if (qr == null)
             {
-                _db.QRCodes.Add(new QRCode { EmpId = empId, QRImageUrl = $"/contact/{empId}", GeneratedAt = DateTime.UtcNow });
+                qr = new QRCode { EmpId = empId, Token = GenerateToken(), GeneratedAt = DateTime.UtcNow };
+                _db.QRCodes.Add(qr);
                 _db.SaveChanges();
             }
 
             ViewBag.Employee = employee;
+            ViewBag.Token = qr.Token;
             return View("QRScreen");
         }
 
+        // QR image endpoint — uses token in the URL embedded in QR
         [HttpGet("/qr-image/{empId}")]
         public IActionResult QRImage(string empId)
         {
@@ -82,17 +100,25 @@ namespace DBPQRPermanent.Controllers
             var employee = _db.Employees.FirstOrDefault(e => e.EmpId == empId);
             if (employee == null) return NotFound();
 
-            string contactUrl = $"{Request.Scheme}://{Request.Host}/contact/{empId}";
+            var qr = _db.QRCodes.FirstOrDefault(q => q.EmpId == empId);
+            if (qr == null) return NotFound();
+
+            // QR points to token URL — emp ID is NOT in the URL
+            string contactUrl = $"{Request.Scheme}://{Request.Host}/contact/{qr.Token}";
             byte[] qrBytes = _qrService.GenerateQRCode(contactUrl);
             return File(qrBytes, "image/png");
         }
 
-        // Scan QR → phone saves contact directly
-        [HttpGet("/contact/{empId}")]
-        public IActionResult Contact(string empId)
+        // Token-based contact endpoint — no emp ID exposed
+        // /contact/a7f3k9x2m4q8b1p5  (unguessable random token)
+        [HttpGet("/contact/{token}")]
+        public IActionResult Contact(string token)
         {
-            empId = empId.Trim().ToUpper();
-            var e = _db.Employees.FirstOrDefault(emp => emp.EmpId == empId);
+            // Look up by token — not by emp ID
+            var qr = _db.QRCodes.FirstOrDefault(q => q.Token == token);
+            if (qr == null) return NotFound();
+
+            var e = _db.Employees.FirstOrDefault(emp => emp.EmpId == qr.EmpId);
             if (e == null) return NotFound();
 
             string lastName = e.Name.Contains(" ") ? e.Name.Substring(e.Name.LastIndexOf(' ') + 1) : "";
@@ -118,10 +144,9 @@ namespace DBPQRPermanent.Controllers
                 sb.Append($"URL:{e.Website}\r\n");
             if (!string.IsNullOrWhiteSpace(e.Facebook))
                 sb.Append($"X-SOCIALPROFILE;type=facebook:{e.Facebook}\r\n");
-            sb.Append($"NOTE:Employee ID: {e.EmpId}\r\n");
             sb.Append("END:VCARD\r\n");
 
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
             string filename = e.Name.Replace(" ", "-") + ".vcf";
             Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
             return File(bytes, "text/vcard");

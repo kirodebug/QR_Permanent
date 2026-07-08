@@ -13,7 +13,10 @@ namespace DBPQRPermanent.Data
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Employee>().HasKey(e => e.EmpId);
+            // One QR per employee
             modelBuilder.Entity<QRCode>().HasIndex(q => q.EmpId).IsUnique();
+            // Token must also be unique — used as the public URL identifier
+            modelBuilder.Entity<QRCode>().HasIndex(q => q.Token).IsUnique();
         }
     }
 }

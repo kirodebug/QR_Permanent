@@ -3,6 +3,7 @@
     var employee = ViewBag.Employee as DBPQRPermanent.Models.Employee;
     string empId = employee?.EmpId ?? "";
     string empName = employee?.Name ?? "";
+    string token = ViewBag.Token as string ?? "";
 }
 <!DOCTYPE html>
 <html lang="en">
