@@ -5,10 +5,6 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Railway sets PORT=8080 — force IPv4 binding (Railway proxy needs 0.0.0.0 not [::])
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseKestrel(options => options.ListenAnyIP(int.Parse(port)));
-
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -31,7 +27,7 @@ builder.Services.AddScoped<QRService>();
 
 var app = builder.Build();
 
-// Create DB + seed — wrapped in try/catch so a seed error doesn't kill the app
+// Create DB + seed on startup
 try
 {
     using var scope = app.Services.CreateScope();
@@ -59,13 +55,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
-// Health check endpoint — Railway uses this to verify app is running
-app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
-
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-Console.WriteLine($"[STARTUP] App starting, HTTP_PORTS={Environment.GetEnvironmentVariable("HTTP_PORTS")}, PORT={Environment.GetEnvironmentVariable("PORT")}");
 app.Run();
