@@ -5,7 +5,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Railway sets PORT env variable — bind to it explicitly
+// Railway sets PORT env variable — must bind to it
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
@@ -21,27 +21,29 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// SQLite — use /tmp on Railway (writable), local path in dev
+var isProduction = (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production") == "Production";
+var dbPath = isProduction ? "/tmp/dbpqr.db" : "dbpqr.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    // In production (Railway), use /tmp which is always writable
-    var dbPath = builder.Environment.IsProduction()
-        ? "/tmp/dbpqr.db"
-        : "dbpqr.db";
-    options.UseSqlite($"Data Source={dbPath}");
-});
+    options.UseSqlite($"Data Source={dbPath}"));
+
 builder.Services.AddScoped<QRService>();
 
 var app = builder.Build();
 
-// Create DB + seed on startup
-using (var scope = app.Services.CreateScope())
+// Create DB + seed — wrapped in try/catch so a seed error doesn't kill the app
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
     DatabaseSeeder.Seed(db);
 }
+catch (Exception ex)
+{
+    Console.WriteLine($"[STARTUP] DB init error: {ex.Message}");
+}
 
-// Swagger always on (useful for admin — restrict by IP in production if needed)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -57,9 +59,13 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
+// Health check endpoint — Railway uses this to verify app is running
+app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
+
 app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+Console.WriteLine($"[STARTUP] App running on port {port}");
 app.Run();
